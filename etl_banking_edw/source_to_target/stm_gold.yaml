@@ -1,0 +1,109 @@
+# ============================================================
+# Source-to-Target Mapping: Silver → Gold Layer
+# ============================================================
+# Gold layer aggregates silver dimensions & facts into
+# business-ready summary tables for analytics.
+# ============================================================
+
+mappings:
+
+  # ---------------------------------------------------------
+  # dim_customer + dim_account + fact_transaction + fact_loan
+  #   → gold_customer_360
+  # ---------------------------------------------------------
+  - source:
+      tables: [dim_customer, dim_account, fact_transaction, fact_loan]
+      grain: "One row per customer_id"
+    target:
+      schema: gold
+      table: gold_customer_360
+    columns:
+      - { source: dim_customer.customer_id,      target: customer_id,          transformation: "PASSTHROUGH" }
+      - { source: dim_customer.full_name,        target: full_name,            transformation: "PASSTHROUGH" }
+      - { source: dim_customer.city,             target: city,                 transformation: "PASSTHROUGH" }
+      - { source: dim_customer.state,            target: state,                transformation: "PASSTHROUGH" }
+      - { source: dim_customer.customer_since,   target: customer_since,       transformation: "PASSTHROUGH" }
+      - { source: dim_account,                   target: total_accounts,       transformation: "COUNT(DISTINCT account_id)" }
+      - { source: dim_account,                   target: active_accounts,      transformation: "COUNT(DISTINCT account_id) WHERE status='ACTIVE'" }
+      - { source: dim_account,                   target: total_balance,        transformation: "SUM(balance) from latest account snapshot" }
+      - { source: dim_account,                   target: avg_balance,          transformation: "AVG(balance) from latest account snapshot" }
+      - { source: fact_transaction,              target: total_transactions,   transformation: "COUNT(transaction_id)" }
+      - { source: fact_transaction,              target: total_credit_amount,  transformation: "SUM(amount) WHERE transaction_type='CREDIT'" }
+      - { source: fact_transaction,              target: total_debit_amount,   transformation: "SUM(amount) WHERE transaction_type='DEBIT'" }
+      - { source: fact_loan,                     target: active_loans,         transformation: "COUNT(loan_id) WHERE status='ACTIVE'" }
+      - { source: fact_loan,                     target: total_loan_outstanding, transformation: "SUM(outstanding_amount)" }
+      - { source: fact_transaction,              target: last_transaction_date, transformation: "MAX(transaction_date)" }
+      - { source: derived,                       target: customer_segment,     transformation: |
+            CASE
+              WHEN total_balance >= 1000000  THEN 'PLATINUM'
+              WHEN total_balance >= 500000   THEN 'GOLD'
+              WHEN total_balance >= 100000   THEN 'SILVER'
+              ELSE 'BASIC'
+            END
+      - { source: derived,                       target: risk_score,           transformation: "Based on NPA ratio, missed EMIs, transaction patterns" }
+
+  # ---------------------------------------------------------
+  # dim_branch + dim_account + fact_transaction + fact_loan
+  #   → gold_branch_performance
+  # ---------------------------------------------------------
+  - source:
+      tables: [dim_branch, dim_account, fact_transaction, fact_loan]
+      grain: "One row per branch_id, report_month"
+    target:
+      schema: gold
+      table: gold_branch_performance
+    columns:
+      - { source: dim_branch.branch_id,    target: branch_id,             transformation: "PASSTHROUGH" }
+      - { source: dim_branch.branch_name,  target: branch_name,           transformation: "PASSTHROUGH" }
+      - { source: dim_branch.city,         target: city,                  transformation: "PASSTHROUGH" }
+      - { source: derived,                 target: report_month,          transformation: "TRUNC(transaction_date, 'MONTH')" }
+      - { source: dim_account,             target: total_customers,       transformation: "COUNT(DISTINCT customer_id)" }
+      - { source: dim_account,             target: total_accounts,        transformation: "COUNT(DISTINCT account_id)" }
+      - { source: fact_transaction,        target: total_deposits,        transformation: "SUM(amount) WHERE type='CREDIT'" }
+      - { source: fact_transaction,        target: total_withdrawals,     transformation: "SUM(amount) WHERE type='DEBIT'" }
+      - { source: derived,                 target: net_flow,              transformation: "total_deposits - total_withdrawals" }
+      - { source: fact_loan,               target: total_loans_disbursed, transformation: "SUM(principal_amount)" }
+      - { source: fact_loan,               target: active_loans,          transformation: "COUNT WHERE status='ACTIVE'" }
+      - { source: fact_loan,               target: npa_amount,            transformation: "SUM(outstanding) WHERE status='DEFAULT'" }
+
+  # ---------------------------------------------------------
+  # fact_transaction → gold_daily_txn_summary
+  # ---------------------------------------------------------
+  - source:
+      tables: [fact_transaction]
+      grain: "One row per transaction_date, channel, transaction_type"
+    target:
+      schema: gold
+      table: gold_daily_txn_summary
+    columns:
+      - { source: transaction_date,  target: transaction_date, transformation: "PASSTHROUGH" }
+      - { source: channel,           target: channel,          transformation: "PASSTHROUGH" }
+      - { source: transaction_type,  target: transaction_type, transformation: "PASSTHROUGH" }
+      - { source: transaction_id,    target: total_count,      transformation: "COUNT(*)" }
+      - { source: status,            target: success_count,    transformation: "COUNT(*) WHERE status='SUCCESS'" }
+      - { source: status,            target: failed_count,     transformation: "COUNT(*) WHERE status='FAILED'" }
+      - { source: amount,            target: total_amount,     transformation: "SUM(amount)" }
+      - { source: amount,            target: avg_amount,       transformation: "AVG(amount)" }
+      - { source: amount,            target: max_amount,       transformation: "MAX(amount)" }
+      - { source: amount,            target: min_amount,       transformation: "MIN(amount)" }
+
+  # ---------------------------------------------------------
+  # fact_loan → gold_loan_portfolio
+  # ---------------------------------------------------------
+  - source:
+      tables: [fact_loan]
+      grain: "One row per loan_type, report_month"
+    target:
+      schema: gold
+      table: gold_loan_portfolio
+    columns:
+      - { source: loan_type,          target: loan_type,          transformation: "PASSTHROUGH" }
+      - { source: derived,            target: report_month,       transformation: "TRUNC(disburse_date, 'MONTH')" }
+      - { source: loan_id,            target: total_loans,        transformation: "COUNT(*)" }
+      - { source: status,             target: active_loans,       transformation: "COUNT WHERE status='ACTIVE'" }
+      - { source: status,             target: defaulted_loans,    transformation: "COUNT WHERE status='DEFAULT'" }
+      - { source: principal_amount,   target: total_principal,    transformation: "SUM(principal_amount)" }
+      - { source: outstanding_amount, target: total_outstanding,  transformation: "SUM(outstanding_amount)" }
+      - { source: interest_rate,      target: avg_interest_rate,  transformation: "AVG(interest_rate)" }
+      - { source: tenure_months,      target: avg_tenure_months,  transformation: "AVG(tenure_months)" }
+      - { source: derived,            target: npa_ratio,          transformation: "defaulted_loans / total_loans * 100" }
