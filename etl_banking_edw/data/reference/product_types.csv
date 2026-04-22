@@ -1,0 +1,13 @@
+product_id,product_name,product_category,interest_rate
+PRD001,Basic Savings,SAVINGS,3.5
+PRD002,Premium Savings,SAVINGS,4.0
+PRD003,Current Account,CURRENT,0.0
+PRD004,Salary Account,SALARY,3.5
+PRD005,NRI Savings,NRI,5.0
+PRD006,Fixed Deposit 1Y,FD,6.5
+PRD007,Fixed Deposit 3Y,FD,7.0
+PRD008,Recurring Deposit,RD,6.0
+PRD009,Home Loan,LOAN,8.5
+PRD010,Personal Loan,LOAN,12.0
+PRD011,Car Loan,LOAN,9.5
+PRD012,Education Loan,LOAN,8.0

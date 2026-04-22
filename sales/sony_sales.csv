@@ -1,5 +1,5 @@
 brand,category,branch_city,transaction_date,units_sold,unit_price,margin_pct,profit,inventory_type
-Sony,TV,culcutta,2026-01-29,9,31617.85,14.00,39838.49,BOPIS_reserved
+Sony,TV,Kolkata,2026-01-29,9,31617.85,14.00,39838.49,BOPIS_reserved
 Sony,TV,Ahmedabad,2025-12-20,2,181470.52,8.73,31684.75,consignment
 Sony,TV,Surat,2025-07-05,23,173719.94,23.92,955737.62,warehouse
 Sony,other_gadgets,Surat,2026-01-19,1,27917.69,26.59,7423.31,in_transit

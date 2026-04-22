@@ -1,0 +1,177 @@
+# ============================================================
+# Source-to-Target Mapping: Bronze → Silver Layer
+# ============================================================
+# Silver applies cleansing, type casting, deduplication,
+# business key resolution, and SCD Type 2 for dim_customer.
+# ============================================================
+
+mappings:
+
+  # ---------------------------------------------------------
+  # bronze_customers → dim_customer  (SCD Type 2)
+  # ---------------------------------------------------------
+  - source:
+      schema: bronze
+      table: bronze_customers
+    target:
+      schema: silver
+      table: dim_customer
+    scd_type: 2
+    business_key: customer_id
+    tracked_columns: [first_name, last_name, phone, email, city, state, is_active]
+    columns:
+      - { source: null,            target: customer_sk,    transformation: "AUTO_INCREMENT surrogate key" }
+      - { source: customer_id,     target: customer_id,    transformation: "PASSTHROUGH" }
+      - { source: first_name,      target: first_name,     transformation: "TRIM + INITCAP" }
+      - { source: last_name,       target: last_name,      transformation: "TRIM + INITCAP" }
+      - { source: "first_name, last_name", target: full_name, transformation: "CONCAT(TRIM(first_name), ' ', TRIM(last_name))" }
+      - { source: date_of_birth,   target: date_of_birth,  transformation: "CAST to DATE (yyyy-MM-dd)" }
+      - { source: date_of_birth,   target: age,            transformation: "DATEDIFF(CURRENT_DATE, date_of_birth) / 365" }
+      - { source: gender,          target: gender,         transformation: "CASE: M→Male, F→Female, ELSE→Other" }
+      - { source: phone,           target: phone,          transformation: "TRIM, validate +91 format" }
+      - { source: email,           target: email,          transformation: "LOWER + TRIM" }
+      - { source: pan_number,      target: pan_number,     transformation: "UPPER + TRIM" }
+      - { source: aadhar_number,   target: aadhar_number,  transformation: "TRIM, must be 12 digits" }
+      - { source: city,            target: city,           transformation: "TRIM + INITCAP" }
+      - { source: state,           target: state,          transformation: "TRIM + INITCAP" }
+      - { source: pin_code,        target: pin_code,       transformation: "TRIM, must be 6 digits" }
+      - { source: customer_since,  target: customer_since, transformation: "CAST to DATE" }
+      - { source: is_active,       target: is_active,      transformation: "PASSTHROUGH" }
+      - { source: null,            target: effective_date,  transformation: "CURRENT_DATE (for new rows)" }
+      - { source: null,            target: expiry_date,     transformation: "9999-12-31 (for current rows)" }
+      - { source: null,            target: is_current,      transformation: "'Y' for latest version" }
+      - { source: null,            target: _etl_loaded_ts,  transformation: "CURRENT_TIMESTAMP" }
+
+  # ---------------------------------------------------------
+  # bronze_accounts → dim_account
+  # ---------------------------------------------------------
+  - source:
+      schema: bronze
+      table: bronze_accounts
+    target:
+      schema: silver
+      table: dim_account
+    scd_type: 1
+    business_key: account_id
+    columns:
+      - { source: null,            target: account_sk,     transformation: "AUTO_INCREMENT surrogate key" }
+      - { source: account_id,      target: account_id,     transformation: "PASSTHROUGH" }
+      - { source: customer_id,     target: customer_id,    transformation: "PASSTHROUGH" }
+      - { source: account_number,  target: account_number, transformation: "PASSTHROUGH" }
+      - { source: account_type,    target: account_type,   transformation: "UPPER + TRIM" }
+      - { source: product_id,      target: product_id,     transformation: "PASSTHROUGH" }
+      - { source: branch_id,       target: branch_id,      transformation: "PASSTHROUGH" }
+      - { source: ifsc_code,       target: ifsc_code,      transformation: "UPPER + TRIM" }
+      - { source: currency,        target: currency,       transformation: "PASSTHROUGH" }
+      - { source: open_date,       target: open_date,      transformation: "CAST to DATE" }
+      - { source: close_date,      target: close_date,     transformation: "CAST to DATE (nullable)" }
+      - { source: status,          target: status,         transformation: "UPPER + TRIM" }
+      - { source: nominee_name,    target: nominee_name,   transformation: "TRIM + INITCAP" }
+      - { source: null,            target: _etl_loaded_ts,  transformation: "CURRENT_TIMESTAMP" }
+
+  # ---------------------------------------------------------
+  # bronze_branches → dim_branch
+  # ---------------------------------------------------------
+  - source:
+      schema: bronze
+      table: bronze_branches
+    target:
+      schema: silver
+      table: dim_branch
+    scd_type: 1
+    business_key: branch_id
+    columns:
+      - { source: null,              target: branch_sk,        transformation: "AUTO_INCREMENT" }
+      - { source: branch_id,         target: branch_id,        transformation: "PASSTHROUGH" }
+      - { source: branch_name,       target: branch_name,      transformation: "TRIM" }
+      - { source: branch_code,       target: branch_code,      transformation: "PASSTHROUGH" }
+      - { source: ifsc_code,         target: ifsc_code,        transformation: "UPPER + TRIM" }
+      - { source: city,              target: city,             transformation: "TRIM + INITCAP" }
+      - { source: state,             target: state,            transformation: "TRIM + INITCAP" }
+      - { source: pin_code,          target: pin_code,         transformation: "TRIM" }
+      - { source: phone,             target: phone,            transformation: "TRIM" }
+      - { source: manager_name,      target: manager_name,     transformation: "TRIM + INITCAP" }
+      - { source: established_date,  target: established_date, transformation: "CAST to DATE" }
+      - { source: is_active,         target: is_active,        transformation: "PASSTHROUGH" }
+      - { source: null,              target: _etl_loaded_ts,   transformation: "CURRENT_TIMESTAMP" }
+
+  # ---------------------------------------------------------
+  # bronze_product_types → dim_product
+  # ---------------------------------------------------------
+  - source:
+      schema: bronze
+      table: bronze_product_types
+    target:
+      schema: silver
+      table: dim_product
+    scd_type: 1
+    business_key: product_id
+    columns:
+      - { source: null,              target: product_sk,       transformation: "AUTO_INCREMENT" }
+      - { source: product_id,        target: product_id,       transformation: "PASSTHROUGH" }
+      - { source: product_name,      target: product_name,     transformation: "TRIM" }
+      - { source: product_category,  target: product_category, transformation: "UPPER + TRIM" }
+      - { source: interest_rate,     target: interest_rate,    transformation: "CAST to DECIMAL(5,2)" }
+      - { source: null,              target: _etl_loaded_ts,   transformation: "CURRENT_TIMESTAMP" }
+
+  # ---------------------------------------------------------
+  # bronze_transactions + lookups → fact_transaction
+  # ---------------------------------------------------------
+  - source:
+      schema: bronze
+      table: bronze_transactions
+      joins:
+        - { table: dim_account,  on: "bronze_transactions.account_id = dim_account.account_id AND dim_account.is_current = 'Y'" }
+        - { table: dim_customer, on: "dim_account.customer_id = dim_customer.customer_id AND dim_customer.is_current = 'Y'" }
+    target:
+      schema: silver
+      table: fact_transaction
+    columns:
+      - { source: null,                target: transaction_sk,   transformation: "AUTO_INCREMENT" }
+      - { source: transaction_id,      target: transaction_id,   transformation: "PASSTHROUGH" }
+      - { source: dim_account.account_sk, target: account_sk,    transformation: "FK lookup" }
+      - { source: dim_customer.customer_sk, target: customer_sk, transformation: "FK lookup" }
+      - { source: "dim_account.branch_id → dim_branch.branch_sk", target: branch_sk, transformation: "FK lookup" }
+      - { source: transaction_date,    target: date_sk,          transformation: "DATE_FORMAT(yyyyMMdd) as INT" }
+      - { source: transaction_date,    target: transaction_date, transformation: "CAST to DATE" }
+      - { source: transaction_time,    target: transaction_time, transformation: "CAST to TIME (HH:mm:ss)" }
+      - { source: transaction_type,    target: transaction_type, transformation: "UPPER + TRIM" }
+      - { source: amount,              target: amount,           transformation: "CAST to DECIMAL(15,2)" }
+      - { source: currency,            target: currency,         transformation: "PASSTHROUGH" }
+      - { source: channel,             target: channel,          transformation: "UPPER + TRIM" }
+      - { source: status,              target: status,           transformation: "UPPER + TRIM" }
+      - { source: description,         target: description,      transformation: "TRIM" }
+      - { source: beneficiary_acc,     target: beneficiary_acc,  transformation: "TRIM (nullable)" }
+      - { source: reference_number,    target: reference_number, transformation: "PASSTHROUGH" }
+      - { source: null,                target: _etl_loaded_ts,   transformation: "CURRENT_TIMESTAMP" }
+
+  # ---------------------------------------------------------
+  # bronze_loans + lookups → fact_loan
+  # ---------------------------------------------------------
+  - source:
+      schema: bronze
+      table: bronze_loans
+      joins:
+        - { table: dim_customer, on: "bronze_loans.customer_id = dim_customer.customer_id AND dim_customer.is_current = 'Y'" }
+        - { table: dim_branch,   on: "bronze_loans.branch_id = dim_branch.branch_id" }
+        - { table: dim_product,  on: "bronze_loans.product_id = dim_product.product_id" }
+    target:
+      schema: silver
+      table: fact_loan
+    columns:
+      - { source: null,              target: loan_sk,            transformation: "AUTO_INCREMENT" }
+      - { source: loan_id,           target: loan_id,            transformation: "PASSTHROUGH" }
+      - { source: dim_customer.customer_sk, target: customer_sk, transformation: "FK lookup" }
+      - { source: dim_branch.branch_sk,     target: branch_sk,   transformation: "FK lookup" }
+      - { source: dim_product.product_sk,   target: product_sk,  transformation: "FK lookup" }
+      - { source: loan_type,         target: loan_type,          transformation: "UPPER + TRIM" }
+      - { source: principal_amount,  target: principal_amount,   transformation: "CAST to DECIMAL(15,2)" }
+      - { source: interest_rate,     target: interest_rate,      transformation: "CAST to DECIMAL(5,2)" }
+      - { source: tenure_months,     target: tenure_months,      transformation: "CAST to INT" }
+      - { source: emi_amount,        target: emi_amount,         transformation: "CAST to DECIMAL(15,2)" }
+      - { source: disburse_date,     target: disburse_date,      transformation: "CAST to DATE" }
+      - { source: maturity_date,     target: maturity_date,      transformation: "CAST to DATE" }
+      - { source: outstanding_amount, target: outstanding_amount, transformation: "CAST to DECIMAL(15,2)" }
+      - { source: status,            target: status,             transformation: "UPPER + TRIM" }
+      - { source: collateral_type,   target: collateral_type,    transformation: "UPPER + TRIM" }
+      - { source: null,              target: _etl_loaded_ts,     transformation: "CURRENT_TIMESTAMP" }

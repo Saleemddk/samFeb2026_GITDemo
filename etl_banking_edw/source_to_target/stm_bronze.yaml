@@ -1,0 +1,147 @@
+# ============================================================
+# Source-to-Target Mapping: Source → Bronze Layer
+# ============================================================
+# Bronze is a 1:1 raw copy. Metadata columns added by pipeline.
+# ============================================================
+
+mappings:
+  # ---------------------------------------------------------
+  # customers.csv → bronze_customers
+  # ---------------------------------------------------------
+  - source:
+      name: customers.csv
+      type: csv
+      location: landing_zone/customers.csv
+    target:
+      schema: bronze
+      table: bronze_customers
+    columns:
+      - { source: customer_id,    target: customer_id,    transformation: "PASSTHROUGH" }
+      - { source: first_name,     target: first_name,     transformation: "PASSTHROUGH" }
+      - { source: last_name,      target: last_name,      transformation: "PASSTHROUGH" }
+      - { source: date_of_birth,  target: date_of_birth,  transformation: "PASSTHROUGH (kept as string)" }
+      - { source: gender,         target: gender,         transformation: "PASSTHROUGH" }
+      - { source: phone,          target: phone,          transformation: "PASSTHROUGH" }
+      - { source: email,          target: email,          transformation: "PASSTHROUGH" }
+      - { source: pan_number,     target: pan_number,     transformation: "PASSTHROUGH" }
+      - { source: aadhar_number,  target: aadhar_number,  transformation: "PASSTHROUGH" }
+      - { source: address,        target: address,        transformation: "PASSTHROUGH" }
+      - { source: city,           target: city,           transformation: "PASSTHROUGH" }
+      - { source: state,          target: state,          transformation: "PASSTHROUGH" }
+      - { source: pin_code,       target: pin_code,       transformation: "PASSTHROUGH" }
+      - { source: customer_since, target: customer_since, transformation: "PASSTHROUGH (kept as string)" }
+      - { source: is_active,      target: is_active,      transformation: "PASSTHROUGH" }
+      - { source: null,           target: _ingestion_ts,  transformation: "CURRENT_TIMESTAMP" }
+      - { source: null,           target: _source_file,   transformation: "input_file_name()" }
+      - { source: null,           target: _batch_id,      transformation: "batch_id parameter" }
+
+  # ---------------------------------------------------------
+  # accounts.csv → bronze_accounts
+  # ---------------------------------------------------------
+  - source:
+      name: accounts.csv
+      type: csv
+      location: landing_zone/accounts.csv
+    target:
+      schema: bronze
+      table: bronze_accounts
+    columns:
+      - { source: account_id,     target: account_id,     transformation: "PASSTHROUGH" }
+      - { source: customer_id,    target: customer_id,    transformation: "PASSTHROUGH" }
+      - { source: account_number, target: account_number, transformation: "PASSTHROUGH" }
+      - { source: account_type,   target: account_type,   transformation: "PASSTHROUGH" }
+      - { source: product_id,     target: product_id,     transformation: "PASSTHROUGH" }
+      - { source: branch_id,      target: branch_id,      transformation: "PASSTHROUGH" }
+      - { source: ifsc_code,      target: ifsc_code,      transformation: "PASSTHROUGH" }
+      - { source: balance,        target: balance,        transformation: "PASSTHROUGH (kept as string)" }
+      - { source: currency,       target: currency,       transformation: "PASSTHROUGH" }
+      - { source: open_date,      target: open_date,      transformation: "PASSTHROUGH" }
+      - { source: close_date,     target: close_date,     transformation: "PASSTHROUGH" }
+      - { source: status,         target: status,         transformation: "PASSTHROUGH" }
+      - { source: nominee_name,   target: nominee_name,   transformation: "PASSTHROUGH" }
+      - { source: null,           target: _ingestion_ts,  transformation: "CURRENT_TIMESTAMP" }
+      - { source: null,           target: _source_file,   transformation: "input_file_name()" }
+      - { source: null,           target: _batch_id,      transformation: "batch_id parameter" }
+
+  # ---------------------------------------------------------
+  # transactions.csv → bronze_transactions
+  # ---------------------------------------------------------
+  - source:
+      name: transactions.csv
+      type: csv
+      location: landing_zone/transactions.csv
+    target:
+      schema: bronze
+      table: bronze_transactions
+    columns:
+      - { source: transaction_id,   target: transaction_id,   transformation: "PASSTHROUGH" }
+      - { source: account_id,       target: account_id,       transformation: "PASSTHROUGH" }
+      - { source: transaction_date, target: transaction_date, transformation: "PASSTHROUGH" }
+      - { source: transaction_time, target: transaction_time, transformation: "PASSTHROUGH" }
+      - { source: transaction_type, target: transaction_type, transformation: "PASSTHROUGH" }
+      - { source: amount,           target: amount,           transformation: "PASSTHROUGH" }
+      - { source: currency,         target: currency,         transformation: "PASSTHROUGH" }
+      - { source: channel,          target: channel,          transformation: "PASSTHROUGH" }
+      - { source: status,           target: status,           transformation: "PASSTHROUGH" }
+      - { source: description,      target: description,      transformation: "PASSTHROUGH" }
+      - { source: beneficiary_acc,  target: beneficiary_acc,  transformation: "PASSTHROUGH" }
+      - { source: reference_number, target: reference_number, transformation: "PASSTHROUGH" }
+      - { source: null,             target: _ingestion_ts,    transformation: "CURRENT_TIMESTAMP" }
+      - { source: null,             target: _source_file,     transformation: "input_file_name()" }
+      - { source: null,             target: _batch_id,        transformation: "batch_id parameter" }
+
+  # ---------------------------------------------------------
+  # loans.csv → bronze_loans
+  # ---------------------------------------------------------
+  - source:
+      name: loans.csv
+      type: csv
+      location: landing_zone/loans.csv
+    target:
+      schema: bronze
+      table: bronze_loans
+    columns:
+      - { source: loan_id,            target: loan_id,            transformation: "PASSTHROUGH" }
+      - { source: customer_id,        target: customer_id,        transformation: "PASSTHROUGH" }
+      - { source: loan_type,          target: loan_type,          transformation: "PASSTHROUGH" }
+      - { source: product_id,         target: product_id,         transformation: "PASSTHROUGH" }
+      - { source: principal_amount,   target: principal_amount,   transformation: "PASSTHROUGH" }
+      - { source: interest_rate,      target: interest_rate,      transformation: "PASSTHROUGH" }
+      - { source: tenure_months,      target: tenure_months,      transformation: "PASSTHROUGH" }
+      - { source: emi_amount,         target: emi_amount,         transformation: "PASSTHROUGH" }
+      - { source: disburse_date,      target: disburse_date,      transformation: "PASSTHROUGH" }
+      - { source: maturity_date,      target: maturity_date,      transformation: "PASSTHROUGH" }
+      - { source: outstanding_amount, target: outstanding_amount, transformation: "PASSTHROUGH" }
+      - { source: status,             target: status,             transformation: "PASSTHROUGH" }
+      - { source: branch_id,          target: branch_id,          transformation: "PASSTHROUGH" }
+      - { source: collateral_type,    target: collateral_type,    transformation: "PASSTHROUGH" }
+      - { source: null,               target: _ingestion_ts,      transformation: "CURRENT_TIMESTAMP" }
+      - { source: null,               target: _source_file,       transformation: "input_file_name()" }
+      - { source: null,               target: _batch_id,          transformation: "batch_id parameter" }
+
+  # ---------------------------------------------------------
+  # branches.json → bronze_branches
+  # ---------------------------------------------------------
+  - source:
+      name: branches.json
+      type: json
+      location: landing_zone/branches.json
+    target:
+      schema: bronze
+      table: bronze_branches
+    columns:
+      - { source: branch_id,        target: branch_id,        transformation: "PASSTHROUGH" }
+      - { source: branch_name,      target: branch_name,      transformation: "PASSTHROUGH" }
+      - { source: branch_code,      target: branch_code,      transformation: "PASSTHROUGH" }
+      - { source: ifsc_code,        target: ifsc_code,        transformation: "PASSTHROUGH" }
+      - { source: address,          target: address,          transformation: "PASSTHROUGH" }
+      - { source: city,             target: city,             transformation: "PASSTHROUGH" }
+      - { source: state,            target: state,            transformation: "PASSTHROUGH" }
+      - { source: pin_code,         target: pin_code,         transformation: "PASSTHROUGH" }
+      - { source: phone,            target: phone,            transformation: "PASSTHROUGH" }
+      - { source: manager_name,     target: manager_name,     transformation: "PASSTHROUGH" }
+      - { source: established_date, target: established_date, transformation: "PASSTHROUGH" }
+      - { source: is_active,        target: is_active,        transformation: "PASSTHROUGH" }
+      - { source: null,             target: _ingestion_ts,    transformation: "CURRENT_TIMESTAMP" }
+      - { source: null,             target: _source_file,     transformation: "input_file_name()" }
+      - { source: null,             target: _batch_id,        transformation: "batch_id parameter" }
